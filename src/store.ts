@@ -1,7 +1,5 @@
 import type { AppState } from './types';
 
-const STORAGE_KEY = 'friseur_app_v1';
-
 const defaultState: AppState = {
   businessName: 'Haarschnitt Atelier',
   adminPassword: 'admin123',
@@ -16,21 +14,23 @@ const defaultState: AppState = {
   bookings: [],
 };
 
-export function loadState(): AppState {
+export async function loadState(): Promise<AppState> {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as Partial<AppState>;
-      return { ...defaultState, ...parsed };
-    }
+    const res = await fetch('/api/state');
+    if (!res.ok) throw new Error('Ladefehler');
+    const data = await res.json() as Partial<AppState>;
+    return { ...defaultState, ...data };
   } catch {
-    // ignore parse errors
+    return defaultState;
   }
-  return defaultState;
 }
 
 export function saveState(state: AppState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  fetch('/api/state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state),
+  }).catch(console.error);
 }
 
 export function generateId(): string {

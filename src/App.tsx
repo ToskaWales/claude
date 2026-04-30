@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { AppState } from './types';
 import { loadState, saveState } from './store';
 import Header from './components/Header';
@@ -18,10 +18,14 @@ export function useApp() {
 }
 
 export default function App() {
-  const [state, setStateRaw] = useState<AppState>(loadState);
+  const [state, setStateRaw] = useState<AppState | null>(null);
   const [view, setView] = useState<'customer' | 'admin'>('customer');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    loadState().then(setStateRaw);
+  }, []);
 
   function updateState(newState: AppState) {
     setStateRaw(newState);
@@ -37,7 +41,7 @@ export default function App() {
   }
 
   function handleLogin(password: string): boolean {
-    if (password === state.adminPassword) {
+    if (state && password === state.adminPassword) {
       setIsAdminLoggedIn(true);
       setView('admin');
       setShowLoginModal(false);
@@ -49,6 +53,14 @@ export default function App() {
   function handleLogout() {
     setIsAdminLoggedIn(false);
     setView('customer');
+  }
+
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <p className="text-stone-400 text-sm">Lädt...</p>
+      </div>
+    );
   }
 
   return (
