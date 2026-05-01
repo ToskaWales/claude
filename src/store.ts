@@ -1,4 +1,8 @@
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import type { AppState } from './types';
+
+const STATE_REF = doc(db, 'app', 'state');
 
 const defaultState: AppState = {
   businessName: 'Haarschnitt Atelier',
@@ -16,21 +20,16 @@ const defaultState: AppState = {
 
 export async function loadState(): Promise<AppState> {
   try {
-    const res = await fetch('/api/state');
-    if (!res.ok) throw new Error('Ladefehler');
-    const data = await res.json() as Partial<AppState>;
-    return { ...defaultState, ...data };
+    const snap = await getDoc(STATE_REF);
+    if (!snap.exists()) return defaultState;
+    return { ...defaultState, ...snap.data() } as AppState;
   } catch {
     return defaultState;
   }
 }
 
 export function saveState(state: AppState): void {
-  fetch('/api/state', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(state),
-  }).catch(console.error);
+  setDoc(STATE_REF, state).catch(console.error);
 }
 
 export function generateId(): string {
