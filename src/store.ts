@@ -1,6 +1,8 @@
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import type { AppState } from './types';
 
-const STORAGE_KEY = 'friseur_app_v1';
+const STATE_REF = doc(db, 'app', 'state');
 
 const defaultState: AppState = {
   businessName: 'Haarschnitt Atelier',
@@ -16,21 +18,18 @@ const defaultState: AppState = {
   bookings: [],
 };
 
-export function loadState(): AppState {
+export async function loadState(): Promise<AppState> {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as Partial<AppState>;
-      return { ...defaultState, ...parsed };
-    }
+    const snap = await getDoc(STATE_REF);
+    if (!snap.exists()) return defaultState;
+    return { ...defaultState, ...snap.data() } as AppState;
   } catch {
-    // ignore parse errors
+    return defaultState;
   }
-  return defaultState;
 }
 
 export function saveState(state: AppState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  setDoc(STATE_REF, state).catch(console.error);
 }
 
 export function generateId(): string {
